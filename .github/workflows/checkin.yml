@@ -1,4 +1,9 @@
 name: AnyRouter 自动签到
+permissions:
+  contents: read
+concurrency:
+  group: anyrouter-check-in
+  cancel-in-progress: false
 on:
   schedule:
     - cron: '0 */6 * * *'
@@ -13,6 +18,7 @@ on:
 jobs:
   checkin:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
     env:
       PYTHONIOENCODING: utf-8
@@ -72,20 +78,13 @@ jobs:
           balance-hash-${{ github.ref_name }}-
           balance-hash-
 
-    - name: 恢复浏览器 Profile 缓存
-      uses: actions/cache@v5
-      with:
-        path: .browser_profiles
-        key: browser-profiles-${{ runner.os }}-v1
-        restore-keys: |
-          browser-profiles-${{ runner.os }}-
-
     - name: 配置代理
       env:
+        PROXY_CONFIG_YAML: ${{ secrets.PROXY_CONFIG_YAML }}
         PROXY_SUBSCRIPTION_URL: ${{ secrets.PROXY_SUBSCRIPTION_URL }}
         PROXY_TEST_URL: https://www.google.com/generate_204
         MIHOMO_VERSION: v1.19.27
-        PROXY_REQUIRED: false
+        PROXY_REQUIRED: true
       run: bash scripts/setup_mihomo_proxy.sh
 
     - name: 执行签到
