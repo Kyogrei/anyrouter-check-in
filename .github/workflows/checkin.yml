@@ -93,7 +93,7 @@ jobs:
         CHECKIN_HEADLESS: false
         CHECKIN_HUMANIZE: true
         CHECKIN_WAIT_TIMEOUT_MS: 120000
-        ANYROUTER_ACCOUNTS: ${{ secrets.ANYROUTER_ACCOUNTS }}
+        ANYROUTER_ACCOUNTS: ${{ secrets.ANYROUTER_ACCOUNTS_V2 }}
         PROVIDERS: ${{ secrets.PROVIDERS }}
         DINGDING_WEBHOOK: ${{ secrets.DINGDING_WEBHOOK }}
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
@@ -114,6 +114,11 @@ jobs:
         BARK_SERVER: ${{ secrets.BARK_SERVER }}
       run: |
         xvfb-run -a --server-args="-screen 0 1920x1080x24" uv run checkin.py
+
+    - name: 清理运行凭据
+      if: always()
+      run: |
+        rm -rf .browser_profiles checkin_screenshots
 
     - name: 上传调试截图
       if: always() && env.DEBUG_MODE == 'true'
