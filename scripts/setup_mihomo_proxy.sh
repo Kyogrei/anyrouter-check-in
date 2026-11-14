@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# 通过 mihomo 拉取订阅、启动本地代理并探测可用节点。
+# 通过 mihomo 加载客户端配置或订阅、启动本地代理并探测可用节点。
 # 环境变量:
-#   PROXY_SUBSCRIPTION_URL  订阅链接（必填才启用）
+#   PROXY_SUBSCRIPTION_URL  订阅链接（使用订阅模式时设置）
 #   PROXY_TEST_URL          探测目标，默认 https://www.google.com/generate_204
 #   PROXY_REQUIRED          true 时探测失败则退出 1
 #   PROXY_PORT              本地 mixed-port，默认 7890
 
 set -euo pipefail
+umask 077
 
-if [[ -z "${PROXY_SUBSCRIPTION_URL:-}" ]]; then
-	echo "[INFO] PROXY_SUBSCRIPTION_URL not set, skip proxy setup"
+PROXY_REQUIRED="${PROXY_REQUIRED:-false}"
+if [[ -z "${PROXY_CONFIG_YAML:-}" && -z "${PROXY_SUBSCRIPTION_URL:-}" ]]; then
+	echo "[INFO] Neither PROXY_CONFIG_YAML nor PROXY_SUBSCRIPTION_URL is set"
+	if [[ "${PROXY_REQUIRED}" == "true" ]]; then
+		exit 1
+	fi
 	exit 0
 fi
 
@@ -17,7 +22,6 @@ PROXY_DIR="${RUNNER_TEMP:-/tmp}/checkin-proxy"
 PROXY_PORT="${PROXY_PORT:-7890}"
 PROXY_TEST_URL="${PROXY_TEST_URL:-https://www.google.com/generate_204}"
 MIHOMO_VERSION="${MIHOMO_VERSION:-v1.19.0}"
-PROXY_REQUIRED="${PROXY_REQUIRED:-false}"
 
 mkdir -p "${PROXY_DIR}"
 cd "${PROXY_DIR}"
@@ -36,6 +40,10 @@ gunzip -f "${ARCHIVE}"
 chmod +x "mihomo-linux-amd64-${MIHOMO_VERSION}"
 MIHOMO_BIN="${PROXY_DIR}/mihomo-linux-amd64-${MIHOMO_VERSION}"
 
+if [[ -n "${PROXY_CONFIG_YAML:-}" ]]; then
+	printf '%s\n' "${PROXY_CONFIG_YAML}" > config.yaml
+	echo "[INFO] Using the Mihomo client configuration from PROXY_CONFIG_YAML"
+else
 cat > config.yaml <<EOF
 mixed-port: ${PROXY_PORT}
 allow-lan: false
@@ -68,6 +76,7 @@ proxy-groups:
 rules:
   - MATCH,CHECKIN
 EOF
+fi
 
 echo "[INFO] Starting mihomo on 127.0.0.1:${PROXY_PORT}..."
 nohup "${MIHOMO_BIN}" -d "${PROXY_DIR}" -f config.yaml > mihomo.log 2>&1 &
