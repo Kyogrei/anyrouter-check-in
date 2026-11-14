@@ -272,6 +272,12 @@
 
 ## 代理配置（可选）
 
+本 Fork 还支持通过 `production` 环境的 `PROXY_CONFIG_YAML` Secret 提供完整的 Mihomo 客户端 YAML 配置，适合自建 VLESS/REALITY 节点。该配置优先于 `PROXY_SUBSCRIPTION_URL`，无需将客户端配置发布为在线订阅。
+
+客户端配置需要使用 `mixed-port: 7890`，并确保签到流量走指定代理节点。账号信息保存在 `ANYROUTER_ACCOUNTS` Secret 中；两个平台都使用代理时，在 `PROVIDERS` 中为它们设置 `use_proxy: true`。
+
+本 Fork 的签到工作流要求代理成功启动后才继续执行，并移除了浏览器 Profile 缓存。服务端私钥、SSH 私钥和客户端节点凭据均不应提交到仓库。
+
 内置的 `agentrouter` 默认 `use_proxy: true`。如果你的运行环境访问该平台不稳定，可以在 GitHub Actions 中配置 mihomo 订阅代理。
 
 在仓库 Settings -> Environments -> production -> Environment secrets 中添加：
